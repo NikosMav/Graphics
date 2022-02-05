@@ -4,7 +4,7 @@ const float PI = 3.14159265359f;
 const float TAU = 6.28318530717f;
 
 
-Sphere::Sphere(unsigned int xSegments, unsigned int ySegments, unsigned int id)
+Sphere::Sphere(unsigned int xSegments, unsigned int ySegments)
 {
 
     Vertex vertex;
@@ -55,7 +55,6 @@ Sphere::Sphere(unsigned int xSegments, unsigned int ySegments, unsigned int id)
 
 
     // You must implement this function!
-    this->id = id;
     setupSphere();
 }
 
@@ -71,8 +70,8 @@ void Sphere::setupSphere() {
 
     // PROSOXH edwwwww TO 0
     //unsigned int vertexPositionID = 0;
-    glVertexAttribPointer(this->id, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray (this->id);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray (0);
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);

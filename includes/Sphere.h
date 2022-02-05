@@ -28,11 +28,9 @@ class Sphere {
 
         int numsToDraw;
 
-        unsigned int id;
-
 
     public:
-        Sphere(unsigned int xSegments, unsigned int ySegments, unsigned int id);
+        Sphere(unsigned int xSegments, unsigned int ySegments);
 
         // You must implement these functions!
         void Draw();
