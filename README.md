@@ -67,3 +67,4 @@ Inside this object is placed the light source that follows the exact orbit of th
 Boxes prbot around the planet.
 Their center of their rotation is the center of the planet but the axes of rotation are different beyond the y-axis on which the planet moves. 
 # Graphics
+# Graphics
