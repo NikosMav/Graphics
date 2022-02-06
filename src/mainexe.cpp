@@ -31,6 +31,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+unsigned int loadTexture(const char *path);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -98,6 +99,17 @@ int main()
     Shader womanShader("shaders/woman_shader.vs", "shaders/woman_shader.fs");
     Shader lightingSphereShader("shaders/light_shader.vs", "shaders/light_shader.fs");
 
+    // load textures (we now use a utility function to keep the code more organized)
+    // -----------------------------------------------------------------------------
+    unsigned int diffuseMap = loadTexture(FileSystem::getPath(WOMAN_MODEL_PATH).c_str());
+    unsigned int specularMap = loadTexture(FileSystem::getPath(WOMAN_MODEL_PATH).c_str());
+
+    // shader configuration
+    // --------------------
+    womanShader.use();
+    womanShader.setInt("material.diffuse", 0);
+    womanShader.setInt("material.specular", 1);
+
 
     // render loop
     // -----------
@@ -125,11 +137,16 @@ int main()
         // womanPos = glm::translate(womanPos, POINT_ZERO);
         // // Down scale the woman model
         // womanPos = glm::scale(womanPos, glm::vec3(0.01f));
-
-        womanShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-        womanShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        womanShader.setVec3("lightPos", lightPos);
+        womanShader.setVec3("light.position", lightPos);
         womanShader.setVec3("viewPos", camera.Position);
+
+        // light properties
+        womanShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        womanShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        womanShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // material properties
+        womanShader.setFloat("material.shininess", 64.0f);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
@@ -144,6 +161,13 @@ int main()
         model = glm::scale(model, glm::vec3(0.05f));
 
         womanShader.setMat4("model", model);
+
+        // bind diffuse map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
+        // bind specular map
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
 
         // render the woman
         womanModel.Draw(womanShader);
@@ -239,6 +263,49 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int loadTexture(char const * path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
+}
+
+
+
+
 
 // #define TEXTURES_PATH_CONTAINER "resources/textures/container.png"
 // #define WOMAN_MODEL_PATH "resources/woman/woman1.obj"
