@@ -46,7 +46,12 @@ In addition to WSAD keys the camera is also controlled using the mouse.
 
 ## About the implementation
 
+Using learnopengl's basic implementations and modifing them to purpose our needs, so that we have a working enviroment for use. In addition to that, lab tests and documentations helped a lot to understand the assignment.
+
+Auxiliary functions were used to implement certain behaviors.
+
+Inside the render loop:
 A woman object has been used for the main model.
 This model is situated at (0,0,0) and light is being reflected on it using proper shader models and implementations of the Phong's algorithm. 
 A light source is being placed near the main model which is performing an orbit around it. Light from the sphere reflects on the main model while moving around it.
-The sphere was built using the given files (Sphere.cpp & Sphere.h)
+The sphere was built using the given files (Sphere.cpp & Sphere.h) as a mesh of triangles and lines.
