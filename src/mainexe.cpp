@@ -24,6 +24,9 @@
 #define POINT_ZERO glm::vec3(0.0f, 0.0f, 0.0f)
 
 
+#define SHPERE_ORBITAL_RADIUS glm::vec3(0.0f, 0.0f,  10.0f)
+
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -153,6 +156,8 @@ int main()
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPos);
         model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, SHPERE_ORBITAL_RADIUS);
         lightingSphereShader.setMat4("model", model);
 
         //lightingSphereShader.setMat4("model", spherePos);
