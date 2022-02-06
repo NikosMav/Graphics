@@ -90,7 +90,7 @@ int main()
 
     // build and compile our shader zprogram
     Model womanModel(FileSystem::getPath(WOMAN_MODEL_PATH));
-    Sphere litSphere(4, 4);
+    Sphere litSphere(40, 40);
 
     Shader womanShader("shaders/woman_shader.vs", "shaders/woman_shader.fs");
     Shader lightingSphereShader("shaders/light_shader.vs", "shaders/light_shader.fs");

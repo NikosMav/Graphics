@@ -62,35 +62,39 @@ Sphere::Sphere(unsigned int xSegments, unsigned int ySegments)
 void Sphere::setupSphere() {
 
     glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
     glBindVertexArray(VAO);
 
-    glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
-    // PROSOXH edwwwww TO 0
-    //unsigned int vertexPositionID = 0;
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, Indices.size() * sizeof(unsigned int), &Indices[0], GL_STATIC_DRAW);
+
+    
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE,sizeof(Vertex), NULL);
     glEnableVertexAttribArray (0);
 
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, Indices.size() * sizeof(GLuint), &Indices[0], GL_STATIC_DRAW);
+    
 
-    this->numsToDraw = Indices.size();
+
 }
 
 void Sphere::Draw() {
 
-    // draw sphere
+
     glBindVertexArray(VAO);
-    // glEnable(GL_PRIMITIVE_RESTART);
-    // glPrimitiveRestartIndex(GL_PRIMITIVE_RESTART_FIXED_INDEX);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glDrawElements(GL_TRIANGLES, numsToDraw, GL_UNSIGNED_INT, NULL);
-
-    glBindVertexArray(0);
     
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
+    glDrawElements(GL_LINES, Indices.size()  , GL_UNSIGNED_INT, NULL);
+    
+    glBindVertexArray(0);
+
+    
+
+    
 }
