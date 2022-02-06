@@ -1,8 +1,8 @@
-# opengl-hello-world
-A mini project in openGL that simulates a planet system with lights rotations and textures.
+# Κινούμενος φωτισμός Phong
+A mini project in openGL that simulates a face lamp system using Phong's lighting model.
 
 
-Code of this project is adapted from Joey De Vries tutorial ![learnopengl](https://learnopengl.com/)
+Code of this project is adapted from tutorial ![learnopengl](https://learnopengl.com/)
 
 
 ## libraries and compilation 
@@ -10,34 +10,25 @@ Code of this project is adapted from Joey De Vries tutorial ![learnopengl](https
 The libraries needed for the execution are already compiled. These are Assimp and GLFW.
 The libraries for the mathematical calculations and also for the version of openGL GLM, GLAD are in header files and they are compiled together with the executable.
 
-The following must be installed before compiling:
+The following command must be used before compiling to secure that we have the proper libraries:
 
-`sudo apt-get build-essential install libsoil-dev libglm-dev libassimp-dev libglew-dev libglfw3-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev libglm-dev`
+`sudo apt-get install build-essential libsoil-dev libglm-dev libassimp-dev libglew-dev libglfw3-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev libglm-dev`
 
 For the compilation only the `make` command is enough
 
 
 ## Executable
 
-The executable is the `./mainexe`
-
-
+The executable is the `./main`
 
 
 ## Controls 
 
-`P` -> pause
-
-`C` -> continue
-
 `ESC` -> exit program
 
-In addition, an adjustment has been made for the speed of rotation of the boxes and the planet.
-The increase and decrease of speed is done with the Q and E buttons.
+`H` -> increase rotational speed
 
-`Q` -> increase rotational speed
-
-`E` -> reduction of rotation speed
+`J` -> reduction of rotation speed
 
 
 ### Control of the camera
@@ -50,21 +41,12 @@ The increase and decrease of speed is done with the Q and E buttons.
 
 `D` -> move left on the x-axis
 
-`UP ARROW` -> move up on the y axis
+In addition to WSAD keys the camera is also controlled using the mouse. 
 
-`DOWN ARROW` -> move down on the y axis
-
-`RIGHT ARROW` -> rotate right on the y axis
-
-`LEFT ARROW` -> rotate left on the y axis
 
 ## About the implementation
 
-A planet object has been used for the main model.
-This model performs a circular motion around (0,0,0).
-Inside this object is placed the light source that follows the exact orbit of the object.
-
-Boxes prbot around the planet.
-Their center of their rotation is the center of the planet but the axes of rotation are different beyond the y-axis on which the planet moves. 
-# Graphics
-# Graphics
+A woman object has been used for the main model.
+This model is situated at (0,0,0) and light is being reflected on it using proper shader models and implementations of the Phong's algorithm. 
+A light source is being placed near the main model which is performing an orbit around it. Light from the sphere reflects on the main model while moving around it.
+The sphere was built using the given files (Sphere.cpp & Sphere.h)

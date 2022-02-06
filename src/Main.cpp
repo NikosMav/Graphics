@@ -1,38 +1,4 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <cmath>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include <shader_m.h>
-#include <filesystem.h>
-#include <model.h>
-#include <Sphere.h>
-#include <camera.h>
-#include <math.h>
-#include <iostream>
-
-#define WOMAN_MODEL_PATH "resources/woman/woman1.obj"
-#define ZERO glm::vec3(0.0f, 0.0f, 0.0f)
-// Sphere's orbit circle radius
-#define ORBIT_RADIUS glm::vec3(0.0f, 0.0f, 15.0f)
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow *window);
-unsigned int loadTexture(const char *path);
-
-// settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+#include <Aux.h>
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -46,7 +12,7 @@ float lastFrame = 0.0f;
 
 // lighting
 // initialization with (0,0,0)
-glm::vec3 lightPos = ZERO;
+glm::vec3 light_pos = ZERO;
 
 // speed
 float global_speed = 1.0f;
@@ -95,18 +61,18 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // build and compile our shader zprogram
-    Model womanModel(FileSystem::getPath(WOMAN_MODEL_PATH));
-    Sphere litSphere(40, 40);
+    Model woman_model(FileSystem::getPath(WOMAN_MODEL_PATH));
+    Sphere light_sphere(40, 40);
 
     // Load shaders
-    Shader womanShader("shaders/woman_shader.vs", "shaders/woman_shader.fs");
-    Shader lightingSphereShader("shaders/light_shader.vs", "shaders/light_shader.fs");
+    Shader woman_shader("shaders/woman_shader.vs", "shaders/woman_shader.fs");
+    Shader light_shader("shaders/light_shader.vs", "shaders/light_shader.fs");
 
     // shader configuration
     // --------------------
-    womanShader.use();
-    womanShader.setInt("material.diffuse", 0);
-    womanShader.setInt("material.specular", 1);
+    woman_shader.use();
+    woman_shader.setInt("material.diffuse", 0);
+    woman_shader.setInt("material.specular", 1);
 
     float temp_angle = 0;
     // render loop
@@ -130,49 +96,49 @@ int main()
 
         // be sure to activate shader when setting uniforms/drawing objects
         // WOMAN OBJECT
-        womanShader.use();
-        womanShader.setVec3("light.position", lightPos);
-        womanShader.setVec3("viewPos", camera.Position);
+        woman_shader.use();
+        woman_shader.setVec3("light.position", light_pos);
+        woman_shader.setVec3("viewPos", camera.Position);
 
         // light properties
-        womanShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        womanShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-        womanShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+        woman_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        woman_shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        woman_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
         // material properties
-        womanShader.setFloat("material.shininess", 64.0f);
+        woman_shader.setFloat("material.shininess", 64.0f);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        womanShader.setMat4("projection", projection);
-        womanShader.setMat4("view", view);
+        woman_shader.setMat4("projection", projection);
+        woman_shader.setMat4("view", view);
         // world transformation
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, ZERO);
 
         // down scale
         model = glm::scale(model, glm::vec3(0.05f));
-        womanShader.setMat4("model", model);
+        woman_shader.setMat4("model", model);
         // render the woman
-        womanModel.Draw(womanShader);
+        woman_model.Draw(woman_shader);
 
-        // also draw the lamp object
+        // also draw the sphere object
         // SPHERE OBJECT
         temp_angle = glfwGetTime() * global_speed;
-        lightPos.x = ORBIT_RADIUS.z * sin(PI * 2.0 * temp_angle / 360);
-        lightPos.z = ORBIT_RADIUS.z * cos(PI * 2.0 * temp_angle / 360);
+        light_pos.x = ORBIT_RADIUS.z * sin(PI * 2.0 * temp_angle / 360);
+        light_pos.z = ORBIT_RADIUS.z * cos(PI * 2.0 * temp_angle / 360);
 
-        lightingSphereShader.use();
-        lightingSphereShader.setMat4("projection", projection);
-        lightingSphereShader.setMat4("view", view);
+        light_shader.use();
+        light_shader.setMat4("projection", projection);
+        light_shader.setMat4("view", view);
         model = glm::mat4(1.0f);
         model = glm::translate(model, ZERO);
         model = glm::scale(model, glm::vec3(0.5f));
         // Sphere position should be equal to light position
-        model = glm::translate(model, lightPos);
-        lightingSphereShader.setMat4("model", model);
+        model = glm::translate(model, light_pos);
+        light_shader.setMat4("model", model);
 
-        litSphere.Draw();
+        light_sphere.Draw();
         //set it back to its default using
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -188,6 +154,7 @@ int main()
     return 0;
 }
 
+// Auxiliary Functions
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)

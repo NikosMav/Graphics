@@ -27,8 +27,6 @@ class Sphere {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> Indices;
 
-        int numsToDraw;
-
 
     public:
         Sphere(unsigned int xSegments, unsigned int ySegments);
