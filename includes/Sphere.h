@@ -6,7 +6,8 @@
 
 #include "shader.h"
 
-
+#define PI 3.14159265359f
+#define TAU 6.28318530717f
 
 
 class Sphere {

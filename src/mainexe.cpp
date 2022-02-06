@@ -14,18 +14,15 @@
 #include <shader_m.h>
 #include <filesystem.h>
 #include <model.h>
-
 #include <Sphere.h>
 #include <camera.h>
-
+#include <math.h>
 #include <iostream>
 
 #define WOMAN_MODEL_PATH "resources/woman/woman1.obj"
-#define POINT_ZERO glm::vec3(0.0f, 0.0f, 0.0f)
-
-
-#define SHPERE_ORBITAL_RADIUS glm::vec3(0.0f, 0.0f,  10.0f)
-
+#define ZERO glm::vec3(0.0f, 0.0f, 0.0f)
+// Sphere's orbit circle radius
+#define ORBIT_RADIUS glm::vec3(0.0f, 0.0f, 15.0f)
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -48,7 +45,12 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 // lighting
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+// initialization with (0,0,0)
+glm::vec3 lightPos = ZERO;
+
+// speed
+float global_speed = 1.0f;
+float speed_increase = 0.05f;
 
 int main()
 {
@@ -96,13 +98,9 @@ int main()
     Model womanModel(FileSystem::getPath(WOMAN_MODEL_PATH));
     Sphere litSphere(40, 40);
 
+    // Load shaders
     Shader womanShader("shaders/woman_shader.vs", "shaders/woman_shader.fs");
     Shader lightingSphereShader("shaders/light_shader.vs", "shaders/light_shader.fs");
-
-    // load textures (we now use a utility function to keep the code more organized)
-    // -----------------------------------------------------------------------------
-    unsigned int diffuseMap = loadTexture(FileSystem::getPath(WOMAN_MODEL_PATH).c_str());
-    unsigned int specularMap = loadTexture(FileSystem::getPath(WOMAN_MODEL_PATH).c_str());
 
     // shader configuration
     // --------------------
@@ -110,12 +108,11 @@ int main()
     womanShader.setInt("material.diffuse", 0);
     womanShader.setInt("material.specular", 1);
 
-
+    float temp_angle = 0;
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {
-
         // per-frame time logic
         // --------------------
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -132,11 +129,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // be sure to activate shader when setting uniforms/drawing objects
+        // WOMAN OBJECT
         womanShader.use();
-        // glm::mat4 womanPos = glm::mat4(1.0f);
-        // womanPos = glm::translate(womanPos, POINT_ZERO);
-        // // Down scale the woman model
-        // womanPos = glm::scale(womanPos, glm::vec3(0.01f));
         womanShader.setVec3("light.position", lightPos);
         womanShader.setVec3("viewPos", camera.Position);
 
@@ -144,7 +138,6 @@ int main()
         womanShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
         womanShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
         womanShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-
         // material properties
         womanShader.setFloat("material.shininess", 64.0f);
 
@@ -153,54 +146,41 @@ int main()
         glm::mat4 view = camera.GetViewMatrix();
         womanShader.setMat4("projection", projection);
         womanShader.setMat4("view", view);
-
         // world transformation
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, POINT_ZERO);
+        model = glm::translate(model, ZERO);
+
         // down scale
         model = glm::scale(model, glm::vec3(0.05f));
-
         womanShader.setMat4("model", model);
-
-        // bind diffuse map
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffuseMap);
-        // bind specular map
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, specularMap);
-
         // render the woman
         womanModel.Draw(womanShader);
 
-
         // also draw the lamp object
+        // SPHERE OBJECT
+        temp_angle = glfwGetTime() * global_speed;
+        lightPos.x = ORBIT_RADIUS.z * sin(PI * 2.0 * temp_angle / 360);
+        lightPos.z = ORBIT_RADIUS.z * cos(PI * 2.0 * temp_angle / 360);
+
         lightingSphereShader.use();
         lightingSphereShader.setMat4("projection", projection);
         lightingSphereShader.setMat4("view", view);
         model = glm::mat4(1.0f);
+        model = glm::translate(model, ZERO);
+        model = glm::scale(model, glm::vec3(0.5f));
+        // Sphere position should be equal to light position
         model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::translate(model, SHPERE_ORBITAL_RADIUS);
         lightingSphereShader.setMat4("model", model);
 
-        //lightingSphereShader.setMat4("model", spherePos);
-
         litSphere.Draw();
+        //set it back to its default using
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    // // optional: de-allocate all resources once they've outlived their purpose:
-    // // ------------------------------------------------------------------------
-    // glDeleteVertexArrays(1, &cubeVAO);
-    // glDeleteVertexArrays(1, &lightCubeVAO);
-    // glDeleteBuffers(1, &VBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -223,6 +203,14 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
+        global_speed += speed_increase;
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS){
+        global_speed -= speed_increase;
+        if(global_speed < 1){
+            global_speed = 1;
+        }
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -263,384 +251,3 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
-
-// utility function for loading a 2D texture from file
-// ---------------------------------------------------
-unsigned int loadTexture(char const * path)
-{
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
-    int width, height, nrComponents;
-    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum format;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
-    }
-
-    return textureID;
-}
-
-
-
-
-
-// #define TEXTURES_PATH_CONTAINER "resources/textures/container.png"
-// #define WOMAN_MODEL_PATH "resources/woman/woman1.obj"
-
-// #define WINDOW_WIDTH 1024
-// #define WINDOW_HEIGHT 600
-
-// #define PROJECTION_FOV glm::radians(45.0f)
-// #define WOMAN_ORBITAL_RADIUS glm::vec3(0.0f, 0.0f,  5.0f)
-// #define POINT_ZERO glm::vec3(0.0f, 0.0f, 0.0f)
-
-// void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-// void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-// void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-// void processInput(GLFWwindow *window);
-// float getActiveTime(); 
-// float getRotationTime();
-
-// // global orbital speed
-// float globalRotationSpeed = 1.0f;
-// float globalRotationSpeedIncrease = 0.02f;
-
-// // camera
-// const float cameraSpeed = 0.1f; 
-// const float cameraRotationSpeed = 0.02f; 
-
-// // camera
-// glm::vec3 cameraPos   = glm::vec3(0.0f, 5.0f, 40.0f);
-// glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-// glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
-// glm::vec3 cameraUpward = glm::vec3(0.0f, 1.0f, 0.0f);
-// float cameraRotation = 0.0;
-// float cameraTilt = 0.0;
-
-// // time per frame
-// float deltaTime = 0.0f;
-// float lastFrameTime = 0.0f; 
-// float prevFrameTime = 0.0f; 
-// float prevRotationTime = 0.0f; 
-// float currentFrameTime = 0.0f;
-// float fps = 0.0f;
-// int framesRendered = 0.0f;
-// int prevSec = 0;
-
-// // pause and timers
-// bool paused = false;
-// float pausedTime = 0.0f;
-// #define PAUSE_SLEEP_TIME 100000
-
-// // lighting
-// glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-
-// int main(){
-//     // initialize opengl core proifile 
-//     glfwInit();
-//     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-//     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-//     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-//     // make a window
-//     GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Main_window", NULL, NULL);
-//     if (window == NULL)    {
-//         std::cout << "Failed to create GLFW window" << std::endl;
-//         glfwTerminate();
-//         return -1;
-//     }
-//     glfwMakeContextCurrent(window);
-
-
-//     // initialize glad to handle pointers
-//     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))    {
-//         std::cout << "Failed to initialize GLAD" << std::endl;
-//         return -1;
-//     }    
-
-//     // adjust the view port size
-//     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); 
-
-//     // enable global depth
-//     glEnable(GL_DEPTH_TEST) ;
-
-//     Model womanModel(FileSystem::getPath(WOMAN_MODEL_PATH));
-//     Sphere litSphere(4, 4);
-
-//     Shader womanShader("shaders/woman_shader.vs", "shaders/woman_shader.fs");
-//     Shader lightingSphereShader("shaders/light_shader.vs", "shaders/light_shader.fs");
-
-//     // rendering loop
-//     while(!glfwWindowShouldClose(window)){
-
-//         // input process
-//         processInput(window);
-
-//         // render process
-//         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the depth buffer and the color buffer
-//         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-//         //glClear(GL_COLOR_BUFFER_BIT);
-
-        
-//         // camera view trasnforms 
-//         glm::mat4 view = glm::mat4(1.0f);
-//         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
-//         // projection transform
-//         glm::mat4 projection(1.0f);
-//         projection = glm::perspective(PROJECTION_FOV, (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f);
-  
-//         // *************************************************
-//         // ************ render the woman model ************
-//         // *************************************************
-//         womanShader.use();
-//         glm::mat4 womanPos = glm::mat4(1.0f);
-//         womanPos = glm::translate(womanPos, POINT_ZERO);
-//         // Down scale the woman model
-//         womanPos = glm::scale(womanPos, glm::vec3(0.1f, 0.1f, 0.1f));
-
-//         womanShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-//         womanShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-//         womanShader.setVec3("lightPos", lightPos);
-
-//         // view/projection transformations
-//         //glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-//         glm::mat4 view = camera.GetViewMatrix();
-//         womanShader.setMat4("projection", projection);
-//         womanShader.setMat4("view", view);
-
-
-//         womanShader.setMat4("projection", projection);
-//         womanShader.setMat4("view", view);
-//         womanShader.setMat4("model", womanPos);
-
-//         womanShader.setMat4("lightColor", 1.0f, 1.0f, 1.0f);
-//         womanShader.setMat4("lightPos", lightPos);
-
-//         // world transformation
-//         glm::mat4 model = glm::mat4(1.0f);
-//         womanShader.setMat4("model", model);
-
-//         womanModel.Draw(womanShader);
-
-//         // ***********************************************
-//         // ************ render the containers ************
-//         // ***********************************************
-//         // containerShader.use();
-//         // // light has the same position with the woman
-//         // containerShader.setVec3("light.position", glm::vec3(womanPos * glm::vec4(POINT_ZERO, 1.0)));
-//         // containerShader.setVec3("viewPos", cameraPos);
-
-//         // // light properties
-//         // containerShader.setVec3("light.ambient", 0.3f, 0.3f, 0.3f);
-//         // containerShader.setVec3("light.diffuse", 0.3f, 0.3f, 0.3f);
-//         // containerShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-//         // containerShader.setFloat("light.constant", 1.0f);
-//         // containerShader.setFloat("light.linear", 0.007f);
-//         // containerShader.setFloat("light.quadratic", 0.0002f);
-
-//         // // material properties
-//         // containerShader.setFloat("material.shininess", 32.0f);
-
-//         // // pass view, projection information
-//         // containerShader.setMat4("view", view);
-//         // containerShader.setMat4("projection", projection);
-
-//         // // bind the textures
-//         // glBindTexture(GL_TEXTURE_2D, containerTexture);
-
-//         // // transformations
-//         // glBindVertexArray(containerVAO);
-//         // for (int container = 0; container < NUM_OF_CONTAINERS; container++){
-//         //     // calculate the orbit around the woman
-//         //     glm::mat4 cotainerPos = glm::mat4(1.0f);
-//         //     // move to the center of the woman
-//         //     cotainerPos = glm::translate(cotainerPos, glm::vec3(womanPos * glm::vec4(POINT_ZERO, 1.0)));
-//         //     cotainerPos = glm::rotate(cotainerPos,  containerOrbitSpeeds[container] * getRotationTime() + containerOrbitOffsets[container], containerOrbitAxes[container]);
-//         //     // move relative to the woman
-//         //     cotainerPos = glm::translate(cotainerPos, containerOrbits[container] );
-
-//         //     // calculate the containers rotation around themself
-//         //     cotainerPos = glm::rotate(cotainerPos,  containerRotationAxesSpeeds[container] * getRotationTime() + containerRotationAxesOffsets[container], containerRotationAxes[container]);
-
-//         //     containerShader.setMat4("model", cotainerPos);
-
-//         //     glDrawArrays(GL_TRIANGLES, 0, 36);
-//         // }
-
-//         lightingSphereShader.use();
-//         lightingSphereShader.setMat4("projection", projection);
-//         lightingSphereShader.setMat4("view", view);
-
-//         glm::mat4 spherePos = glm::mat4(1.0f);
-//         spherePos = glm::translate(spherePos, glm::vec3(3.0f, 3.0f, 1.0f));
-//         spherePos = glm::scale(spherePos, glm::vec3(1.0f, 1.0f, 1.0f));
-
-//         lightingSphereShader.setMat4("model", spherePos);
-
-
-//         litSphere.Draw();
-//         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-//         // *************************************************
-//         // ************ render the light source ************
-//         // *************************************************
-
-//         // lightShader.use();
-//         // lightShader.setMat4("projection", projection);
-//         // lightShader.setMat4("view", view);
-//         // // light position = woman position
-//         // glm::mat4 lightPos = womanPos;
-//         // lightPos = glm::scale(lightPos, glm::vec3(2.0f, 2.0f, 2.0f));
-//         // lightShader.setMat4("model", lightPos);
-
-//         // glBindVertexArray(lightVAO);
-//         // glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-
-//         // get the frame rate
-//         currentFrameTime = getActiveTime(); 
-//         deltaTime = currentFrameTime - prevFrameTime;
-//         // get the fps
-//         framesRendered++;
-//         if ((int)currentFrameTime- prevSec == 1){
-//             printf("FPS %d\n",framesRendered);
-//             framesRendered = 0;
-//         }
-//         prevSec = (int)getActiveTime();
-//         prevFrameTime = currentFrameTime;
-//         prevRotationTime = getRotationTime();
-
-
-//         // check if paused
-//         processInput(window);
-//         while(paused){
-//             // reset the timer
-//             pausedTime = (float)glfwGetTime();
-//             lastFrameTime = currentFrameTime;
-//             prevFrameTime = currentFrameTime;
-//             // sleep a framerate time
-//             usleep(PAUSE_SLEEP_TIME);
-//             // input process
-//             processInput(window);
-//             glfwSwapBuffers(window);
-//             glfwPollEvents(); 
-//         }
-//         // check call events
-//         glfwSwapBuffers(window);
-//         glfwPollEvents();    
-//     }
-  
-//     // // delete all the variables, shaders, buffers
-//     // glDeleteVertexArrays(1, &containerVAO);
-//     // glDeleteVertexArrays(1, &lightVAO);
-//     // glDeleteBuffers(1, &VBO);
-
-//     glfwTerminate();    
-//     return 0;
-// }
-
-// // rotation time different for the speed up and slow down of the animation
-// float getRotationTime(){
-//     return prevRotationTime + (globalRotationSpeed * deltaTime);
-// }
-
-// float getActiveTime(){
-//     return (float)glfwGetTime() - (pausedTime - lastFrameTime);
-// }
-
-// void framebuffer_size_callback(GLFWwindow* window, int width, int height){
-//     glViewport(0, 0, width, height);
-// }  
-
-
-// // call backs
-// void processInput(GLFWwindow *window){   
-
-//     // if pressed escape end the rendering or exit pause and end the rendering
-//     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
-//         glfwSetWindowShouldClose(window, true);
-//         paused = false;
-//     }
-    
-//     // forward and backward
-//     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-//         cameraPos += cameraSpeed * cameraFront;
-//     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-//         cameraPos -= cameraSpeed * cameraFront;
-
-//     // up and down
-//     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) != GLFW_PRESS )
-//         cameraPos += cameraSpeed * cameraUpward;
-//     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) != GLFW_PRESS)
-//         cameraPos -= cameraSpeed * cameraUpward;
-
-//     // rotate left and right
-//     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-//         // change the front of x an z 
-//         cameraFront = glm::vec3(sin(cameraRotation += cameraRotationSpeed*cameraSpeed), 0.0f, -cos(cameraRotation += cameraRotationSpeed*cameraSpeed)); 
-//     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-//         // change the front of x an z 
-//         cameraFront = glm::vec3(sin(cameraRotation -= cameraRotationSpeed*cameraSpeed), 0.0f, -cos(cameraRotation -= cameraRotationSpeed*cameraSpeed)); 
-
-//     // left and right
-//     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-//         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-//     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-//         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-
-//     // pause
-//     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
-//         paused = true;        
-//     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
-//         paused = false;
-
-//     // increase speed
-//     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS){
-//         globalRotationSpeed += globalRotationSpeedIncrease;
-//     }
-//     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS){
-//         globalRotationSpeed -= globalRotationSpeedIncrease;
-//     }
-
-
-//     // // tilt up and down
-//     // if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-//     //     cameraFront = glm::vec3(sin(cameraRotation), sin(cameraTilt += cameraRotationSpeed*cameraSpeed), -cos(cameraTilt += cameraRotationSpeed*cameraSpeed)-cos(cameraRotation)); 
-//     //     // cameraUp    = glm::vec3(sin(cameraTilt += cameraRotationSpeed*cameraSpeed), cos(cameraTilt += cameraRotationSpeed*cameraSpeed), 0.0f); 
-//     // }
-//     // if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-//     //     cameraFront = glm::vec3(sin(cameraRotation), sin(cameraTilt -= cameraRotationSpeed*cameraSpeed), -cos(cameraTilt -= cameraRotationSpeed*cameraSpeed)-cos(cameraRotation)); 
-//     //     // cameraUp    = glm::vec3(sin(cameraTilt -= cameraRotationSpeed*cameraSpeed), cos(cameraTilt -= cameraRotationSpeed*cameraSpeed), -cos(cameraRotation)); 
-//     // }
-
-// }
-
-
-
-
-

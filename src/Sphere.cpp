@@ -1,9 +1,5 @@
 #include <Sphere.h>
 
-const float PI = 3.14159265359f;
-const float TAU = 6.28318530717f;
-
-
 Sphere::Sphere(unsigned int xSegments, unsigned int ySegments)
 {
 
@@ -53,7 +49,6 @@ Sphere::Sphere(unsigned int xSegments, unsigned int ySegments)
         }
     }
 
-
     // You must implement this function!
     setupSphere();
 }
@@ -63,38 +58,30 @@ void Sphere::setupSphere() {
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    glGenBuffers(1, &EBO); //copy the indices into the buffer
 
     glBindVertexArray(VAO);
 
+    //copy our vertices array in a buffer for OpenGL to use 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
-
+    //A bind and an unbind call (like VBO)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, Indices.size() * sizeof(unsigned int), &Indices[0], GL_STATIC_DRAW);
-
     
+    //then set our vertex attributes pointers
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE,sizeof(Vertex), NULL);
     glEnableVertexAttribArray (0);
-
-    
-
-
 }
 
 void Sphere::Draw() {
 
-
     glBindVertexArray(VAO);
-    
+    //render the triangles in wireframe mode
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    
-    glDrawElements(GL_LINES, Indices.size()  , GL_UNSIGNED_INT, NULL);
+    //render the triangles
+    glDrawElements(GL_TRIANGLES, Indices.size(), GL_UNSIGNED_INT, NULL);
     
     glBindVertexArray(0);
-
-    
-
-    
 }
