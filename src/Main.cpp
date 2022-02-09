@@ -60,10 +60,8 @@ int main()
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    // build and compile our shader zprogram
     Model woman_model(FileSystem::getPath(WOMAN_MODEL_PATH));
     Sphere light_sphere(40, 40);
-
     // Load shaders
     Shader woman_shader("shaders/woman_shader.vs", "shaders/woman_shader.fs");
     Shader light_shader("shaders/light_shader.vs", "shaders/light_shader.fs");

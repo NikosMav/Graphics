@@ -4,7 +4,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-#include "shader.h"
+#include <shader_m.h>
 
 #define PI 3.14159265359f
 #define TAU 6.28318530717f
