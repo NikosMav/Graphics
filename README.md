@@ -1,6 +1,5 @@
 # Κινούμενος φωτισμός Phong
-A mini project in openGL that simulates a face lamp system using Phong's lighting model like so:
-<a href="https://drive.google.com/drive/my-drive" title="Link Title"><img src="{image-url}" alt="Alternate Text" /></a>
+A mini project in openGL that simulates a face lamp system using Phong's lighting model.
 
 
 Code of this project is adapted from tutorial ![learnopengl](https://learnopengl.com/)
