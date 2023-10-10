@@ -1,4 +1,4 @@
-# Κινούμενος φωτισμός Phong
+# Opengl-Phong
 A mini project in openGL that simulates a face lamp system using Phong's lighting model.
 
 
