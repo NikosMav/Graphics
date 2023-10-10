@@ -2,7 +2,7 @@
 A mini project in openGL that simulates a face lamp system using Phong's lighting model.
 
 
-Code of this project is adapted from tutorial ![learnopengl](https://learnopengl.com/)
+Code of this project is adapted from tutorial [learnopengl](https://learnopengl.com/)
 
 
 ## libraries and compilation 
